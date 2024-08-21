@@ -1,7 +1,7 @@
-import conexao.Conexao;
+import DAO.*;
 
 public class App {
     public static void main(String[] args) throws Exception {
-        System.out.println(Conexao.getConnection());
+        System.out.println(new Controller());
     }
 }
