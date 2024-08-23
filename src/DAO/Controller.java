@@ -2,6 +2,7 @@ package DAO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
@@ -20,15 +21,21 @@ public class Controller {
         System.exit(1);}
     }
 
-    public int Create(String table, String campos, boolean retorno, String values){
+    public int Create(String table, String valores_campos, boolean retorno, String nomes_campos){
         try{
             if(retorno){
-            String query = "INSERT INTO "+table+"("+ campos +") VALUES("+values+") RETURNING id" +table+";";
-            ResultSet rt = conexao.createStatement().executeQuery(query);
-            if(rt.next())
-                return rt.getInt("id"+table);
+            String query = "INSERT INTO "+table+"("+ nomes_campos +") VALUES("+valores_campos+");";   
+            PreparedStatement ps = conexao.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            
+            // Executa a query
+            ps.executeUpdate();
+            
+            // Obtém o ID gerado
+            ResultSet rs = ps.getGeneratedKeys();
+            if(rs.next())
+                return rs.getInt(1);
             }else{
-                String query = "INSERT INTO "+table+"("+ campos +") VALUES("+values+")";
+                String query = "INSERT INTO "+table+"("+ nomes_campos +") VALUES("+valores_campos+");";
                 return conexao.createStatement().executeUpdate(query);
             }
         }catch(Exception e){
@@ -56,13 +63,13 @@ public class Controller {
         }
         return -2;
     }
-    public ResultSet Read(String table, String campos, String condicao){
+    public ResultSet Read(String table, String campos, String condicao) {
         ResultSet rt = null;
-        try{
-            String query = "SELECT "+campos+" FROM "+table+" "+condicao+";";
+        try {
+            String query = "SELECT " + campos + " FROM " + table + " " + condicao + ";";
             rt = conexao.createStatement().executeQuery(query);
-        }catch(Exception e){
-            System.out.println("Falha ao buscar dados..."+e);
+        } catch (Exception e) {
+            System.out.println("Falha ao buscar dados..." + e);
         }
         return rt;
     }
@@ -101,12 +108,21 @@ public class Controller {
 
     public ResultSet login(String user, String password, String table) {
         try {
-            ResultSet rt = Read(table, "*", " WHERE usuario = '" + user + "'");
+            if(table.equals("vendedor")){
+                ResultSet rt = Read(table, "*", " WHERE usuario = '" + user + "';");
+
+                if (rt.next()){
+                    if (password.equalsIgnoreCase(rt.getString("senha")))
+                        return rt;
+                }
+            }
+            else{
+            ResultSet rt = Read(table, "*", " WHERE cpf = '" + user + "';");
 
             if (rt.next()){
                 if (password.equalsIgnoreCase(rt.getString("senha")))
                     return rt;
-            }
+            }}
 
         } catch (Exception e) {
             System.out.println("Falha no login do usuario... " + e);
@@ -114,10 +130,9 @@ public class Controller {
         return null;
     }
 
-    public ResultSet Select(String campos, String table, String infopesquisa, String pesquisa){
+    public ResultSet Select(String campos, String table, String infopesquisa, String pesquisa) {
         try {
-            return Read(table, campos, " WHERE " + pesquisa +
-                    " = " + infopesquisa);
+            return Read(table, campos, " WHERE " + pesquisa + " = '" + infopesquisa + "'");
         } catch (Exception e) {
             System.out.println("Falha ao buscar dados... " + e);
         }
@@ -127,7 +142,7 @@ public class Controller {
       public void printa(String table, String colunas){
         try{
             ResultSet rt = Read(table, colunas, "WHERE id_" + table + " >= 0");
-
+            
             ResultSetMetaData rtMetaData = rt.getMetaData();
             int numeroDeColunas = rtMetaData.getColumnCount();
 
@@ -150,9 +165,13 @@ public class Controller {
             ResultSet rt = Read(table, colunas, " WHERE id_" + table + " = " + id +
                     " AND id_" + table + " >= 0");
 
+            if (!rt.next()) {
+                System.out.println("Nenhum registro encontrado...");
+                return;
+            }
+            else{
             ResultSetMetaData rtMetaData = rt.getMetaData();
             int numeroDeColunas = rtMetaData.getColumnCount();
-
             while (rt.next()) {
                 StringJoiner joiner = new StringJoiner(", ", "[", "]\n");
                 for (int coluna = 1; coluna <= numeroDeColunas; coluna++) {
@@ -162,7 +181,7 @@ public class Controller {
                 System.out.print(joiner.toString());
             }
 
-        } catch (Exception e){
+        }} catch (Exception e){
             System.out.println("Falha ao mostrar resultados... " + e);
         }
     }
