@@ -21,6 +21,8 @@ public class Vendedor {
     }
 
     public boolean cadastraCliente(Scanner tc){
+        String cpf_cliente;
+        try{
         while(true){
         System.out.println("Digite o nome: ");
         String nome = tc.nextLine();
@@ -33,8 +35,8 @@ public class Vendedor {
         System.out.println("Agora seguiremos para as informações de login!");
         while (true) {
         System.out.println("Digite o CPF: ");
-        String cpf = tc.nextLine();
-        if(con.Quantity("", "cliente", " WHERE cpf ="+"'"+cpf+"'")>0)
+        cpf_cliente = tc.nextLine();
+        if(con.Quantity("", "cliente", " WHERE cpf ="+"'"+cpf_cliente+"'")>0)
             System.out.println("CPF já cadastrado, tente novamente!");
         else
             break;
@@ -43,13 +45,13 @@ public class Vendedor {
         String senha = tc.nextLine();
         System.out.println("VERIFIQUE SE AS INFORMAÇÕES ESTÃO CORRETAS!");
         System.out.println("""
-                Nome:"""+ nome+"""
-                Rua:"""+ rua+"""                
-                Número:"""+ numero+"""               
-                Email:"""+ email
+                \nNome:"""+ nome+"""
+                \nRua:"""+ rua+"""                
+                \nNúmero:"""+ numero+"""               
+                \nEmail:"""+ email
                 );
         if(tc.nextLine().equalsIgnoreCase("sim")||tc.nextLine().equalsIgnoreCase("s")){
-            String insere = "'"+ nome+"', '"+ rua+"', "+ numero+", '"+ email+"', '"+ cpf+"', '"+ senha+"'";
+            String insere = "'"+ nome+"', '"+ rua+"', "+ numero+", '"+ email+"', '"+cpf_cliente+"', '"+ senha+"'";
             if(con.Create("cliente", insere, false, "nome, rua, numero, email, cpf, senha")!=-1){
                 System.out.println("Cliente cadastrado com sucesso!");
                 return true;}
@@ -61,7 +63,10 @@ public class Vendedor {
             if(!tc.nextLine().equalsIgnoreCase("sim")||!tc.nextLine().equalsIgnoreCase("s"))
                 break;
         }
-     } return false;
+     }} catch (Exception e){
+        System.out.println("Falha ao cadastrar cliente...");
+        e.printStackTrace();}
+      return false;
     }
 
     public boolean cadastraCompra(Scanner tc){
@@ -70,77 +75,86 @@ public class Vendedor {
             System.out.println("ID do Produto: ");
             int id = Integer.parseInt(tc.nextLine());
 
-            if(con.Quantity("", "produto", " WHERE id_produto = '"+id+"'")>0){
-                try{
-                    ResultSet rt = con.Select("nome, quantidade_estoque, preco","produto", "id_produto",Integer.toString(id));
-                    rt.next();
-
-                    int quantidade_estoque = rt.getInt("quantidade_estoque");
-                    if(quantidade_estoque == 0){
-                        System.out.println("Produto sem estoque!");
-                        continue;
-                    }
-                    String tratapreco = rt.getString("preco").substring(3);
-                    tratapreco = tratapreco.replace(",", ".");
-                    
-                    Produto p1 = new Produto(rt.getString("nome"), rt.getDouble("preco"),rt.getInt("quantidade_estoque"));
-                    while (true) {
-                        System.out.println("Quantidade: ");
-                        int quantidade = Integer.parseInt(tc.nextLine());
-                        if(quantidade_estoque<quantidade){
-                            System.out.println("Quantidade indisponível! Deseja tentar novamente?");
-                            if(!tc.nextLine().equalsIgnoreCase("sim")||!tc.nextLine().equalsIgnoreCase("s"))
+            if (con.Quantity("", "produto", " WHERE id_produto = " + id + "") > 0) {
+                ResultSet rt = null;
+                try {
+                    rt = con.Select("nome,preco,quantidade_estoque", "produto", Integer.toString(id),"id_produto");
+                    if (rt != null && rt.next()) { // Verifica se rt não é null e se há resultados
+                        int quantidade_estoque = rt.getInt("quantidade_estoque");
+                        if (quantidade_estoque == 0) {
+                            System.out.println("Produto sem estoque!");
+                            continue;
+                        }
+                        
+                        String tratapreco = rt.getString("preco").substring(3).replace(",", ".");
+                        Produto p1 = new Produto(rt.getString("nome"), rt.getDouble("preco"), rt.getInt("quantidade_estoque"));
+                        
+                        while (true) {
+                            System.out.println("Quantidade: ");
+                            int quantidade = Integer.parseInt(tc.nextLine());
+                            if (quantidade > quantidade_estoque) {
+                                System.out.println("Quantidade indisponível! Deseja tentar novamente?");
+                                if (!tc.nextLine().equalsIgnoreCase("sim") && !tc.nextLine().equalsIgnoreCase("s")) {
+                                    break;
+                                }
+                            } else {
+                                c.adicionarProduto(p1, quantidade);
+                                produtoAdquirido(id, quantidade);
                                 break;
+                            }
                         }
-                        else{
-                            c.adicionarProduto(p1, quantidade);
-                            produtoAdquirido(id, quantidade);
-                            break;
-                        }
-                    } rt.close();
-                }
-                catch(Exception e){
+                    } else {
+                        System.out.println("Produto não encontrado!");
+                    }
+                } catch(Exception e){
                     System.out.println("Erro ao adicionar produto!");
                     e.printStackTrace();
+                } finally {
+                    if (rt != null) {
+                        try {
+                            rt.close();
+                        } catch (Exception e) {
+                            System.out.println("Erro ao fechar o ResultSet: " + e.getMessage());
+                        }
+                    }
                 }
-                System.out.println("Produto adicionado com sucesso!");
         } else{
 
             System.out.println("Produto não encontrado! Deseja cadastrar?");
                 if (tc.nextLine().equalsIgnoreCase("sim")||tc.nextLine().equalsIgnoreCase("s")){
                     cadastraProduto(tc);
                     continue;
+                }}
+                c.getCompra();
+                System.out.println("\nO produto adicionado é o correto? (sim/não)");
+                
+                String respostaProduto = tc.nextLine();
+                if (respostaProduto.equalsIgnoreCase("não") || respostaProduto.equalsIgnoreCase("n")|| respostaProduto.equalsIgnoreCase("nao")) {
+                    c.removerProduto();
                 }
 
-            
-        }
-        c.getCompra();
-        System.out.println("\nO produto adicionado é o correto? ");
-
-            if(tc.nextLine().equalsIgnoreCase("não")||tc.nextLine().equalsIgnoreCase("n")){
-                c.removerProduto();            }
-
-            System.out.println("\nJá adicionou todos os produtos da compra? ");
-            if (tc.nextLine().equalsIgnoreCase("sim")||tc.nextLine().equalsIgnoreCase("s")){
-                break;
-            }
+                System.out.println("\nJá adicionou todos os produtos da compra? (sim/não)");
+                String respostaFinalizacao = tc.nextLine();
+                if (respostaFinalizacao.equalsIgnoreCase("sim") || respostaFinalizacao.equalsIgnoreCase("s")) {
+                    break;
+                }
 
         }
 
         double total = 0;
-        for(int i = 0; i < c.getSize(); i++){
-            total += c.getProduto(i).getPreco() * c.getQuantidade(i);
-        }
+        for (int i = 0; i < c.getSize(); i++) {
+            total += c.getProduto(i).getPreco() * c.getQuantidade(i);}
         System.out.println("\nPreço total: R$" + total + "\nQual a forma de pagamento? ");
         String formaPagamento = tc.nextLine();
 
-        System.out.print("O cliente possui cadastro na loja?\n");
-        if (!tc.nextLine().equalsIgnoreCase("sim")||!tc.nextLine().equalsIgnoreCase("s")) {
+        System.out.print("O cliente possui cadastro na loja? (sim/não) ");
+        String respostaCadastro = tc.nextLine();
+        if (!respostaCadastro.equalsIgnoreCase("sim") || !respostaCadastro.equalsIgnoreCase("s")) {
             System.out.println("PARA REALIZAÇÃO DA COMPRA É NECESSÁRIO ESTAR CADASTRADO!\n" +
-                    "REALIZE O CADASTRO DO CLIENTE");
+            "REALIZE O CADASTRO DO CLIENTE");
 
-            cadastraCliente(tc);
-        }
+            cadastraCliente(tc);}
+        
         String usuario,senha;
         ResultSet rs;
         while (true) {
@@ -160,9 +174,9 @@ public class Vendedor {
             rs.close();
 
             Date date= new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-            int id_carrinho = con.Create("carrinho", id_c+" , -1",true, "id_cliente, id_compra");
+            int id_carrinho = con.Create("carrinho", id_c,true, "id_cliente");
             if (id_carrinho == -1) {
                 System.out.println("Falha ao criar carrinho!");
                 return false;
@@ -178,8 +192,6 @@ public class Vendedor {
 
             if(id_compra !=-1){
                 System.out.println("Compra realizada com sucesso!");
-                con.Update("carrinho", "id_compra", Integer.toString(id_compra),
-                        "WHERE id_compra = " + -1);
                 c = null;
                 return true;
             } 
@@ -190,6 +202,7 @@ public class Vendedor {
     c = null;
     return false;
 }
+    
 
 
     public void cadastraProduto(Scanner tc){
@@ -201,7 +214,7 @@ public class Vendedor {
         double preco = Double.parseDouble(tc.nextLine());
 
         String informacoes = "'"+nome+"', "+Double.toString(preco)+", "+Integer.toString(quantidade);
-        int id_Produto = con.Create("Produto", informacoes, true, "nome,preco,quantidade_estoque");
+        int id_Produto = con.Create("produto", informacoes, true, "nome,preco,quantidade_estoque");
         if(id_Produto != -1){
             System.out.println("Produto cadastrado com sucesso!Seu id é: "+id_Produto);
         } else{
@@ -243,6 +256,7 @@ public class Vendedor {
             if(con.Quantity(id_produto, "produto", "")>0){
                 try{
                     ResultSet rs = con.Select("nome,preco,quantidade_estoque", "produto", id_produto, "id_produto");
+                    if(rs.next()){
                     System.out.println("O produto a ser removido é: ");
                     System.out.println("Nome: "+rs.getString("nome")+"\nPreço: R$"+rs.getString("preco")+"\nQuantidade: "+rs.getString("quantidade_estoque"));
                     if(tc.nextLine().equalsIgnoreCase("sim")||tc.nextLine().equalsIgnoreCase("s")){
@@ -251,6 +265,9 @@ public class Vendedor {
                             
                         else
                             System.out.println("Falha ao remover produto!");
+                    }}
+                    else{
+                        System.out.println("Produto não encontrado.");
                     } 
                 }
                 catch(Exception e){
@@ -258,40 +275,51 @@ public class Vendedor {
                     e.printStackTrace();
                 }
                 System.out.println("Deseja remover outro produto?");
-                if(tc.nextLine().equalsIgnoreCase("não")||tc.nextLine().equalsIgnoreCase("n"))
-                    return;
+                if(tc.nextLine().equalsIgnoreCase("não")||tc.nextLine().equalsIgnoreCase("n")||tc.nextLine().equalsIgnoreCase("nao"))
+                    break;
             }
+            else{System.out.println("Não há produtos no estoque!");break;}
 
         }
     }
 
-    public void removeVendedor(Scanner tc){
-        while(true){
+    public void removeVendedor(Scanner tc) {
+        while (true) {
             System.out.println("Digite o ID do vendedor que deseja remover: ");
             String id_vendedor = tc.nextLine();
-
-            if(con.Quantity(id_vendedor, "vendedor", "")>0){
-                try{
-                    ResultSet rs = con.Select("nome,cpf", "vendedor", id_vendedor, "id_vendedor");
-                    System.out.println("O vendedor a ser removido é: ");
-                    System.out.println("Nome: "+rs.getString("nome")+"\nCPF: "+rs.getString("cpf"));
-                    if(tc.nextLine().equalsIgnoreCase("sim")||tc.nextLine().equalsIgnoreCase("s")){
-                        if(con.Delete("vendedor", "id_vendedor", id_vendedor,false))
-                            System.out.println("Vendedor removido com sucesso!");
-                            
-                        else
-                            System.out.println("Falha ao remover vendedor!");
-                    } 
-                }
-                catch(Exception e){
+    
+            if (con.Quantity(id_vendedor, "vendedor", "") > 0) {
+                try {
+                    ResultSet rs = con.Select("nome, cpf", "vendedor", id_vendedor, "id_vendedor");
+                    if (rs.next()) {
+                        System.out.println("O vendedor a ser removido é: ");
+                        System.out.println("Nome: " + rs.getString("nome") + "\nCPF: " + rs.getString("cpf"));
+                        
+                        System.out.println("Deseja remover este vendedor? (sim/s)");
+                        String resposta = tc.nextLine();
+                        if (resposta.equalsIgnoreCase("sim") || resposta.equalsIgnoreCase("s")) {
+                            if (con.Delete("vendedor", "id_vendedor", id_vendedor, false)) {
+                                System.out.println("Vendedor removido com sucesso!");
+                            } else {
+                                System.out.println("Falha ao remover vendedor!");
+                            }
+                        }
+                    } else {
+                        System.out.println("Vendedor não encontrado.");
+                    }
+                } catch (Exception e) {
                     System.out.println("Falha ao remover vendedor...");
                     e.printStackTrace();
                 }
-                System.out.println("Deseja remover outro vendedor?");
-                if(tc.nextLine().equalsIgnoreCase("não")||tc.nextLine().equalsIgnoreCase("n"))
-                    return;
+    
+                System.out.println("Deseja remover outro vendedor? (não/n)");
+                String continuar = tc.nextLine();
+                if (continuar.equalsIgnoreCase("não") || continuar.equalsIgnoreCase("n")|| continuar.equalsIgnoreCase("nao")) {
+                    break;
+                }
+            } else {
+                System.out.println("ID de vendedor inválido ou não encontrado.");
             }
-
         }
     }
 
@@ -329,7 +357,7 @@ public class Vendedor {
     public void alteraProduto(Scanner tc){
         
         try{
-        while (true) {
+        while (con.Quantity("", "produto", "")>0) {
         System.out.println("O que você deseja alterar?");
         System.out.println("1 - Nome\n"+"2 - Preço\n"+"3 - Quantidade\n"+"4 - Sair");
         int op = Integer.parseInt(tc.nextLine());
@@ -344,7 +372,7 @@ public class Vendedor {
                 if(con.Update("produto", "nome", "'" +novo_nome+"'", "WHERE id_produto = "+ id_produto)){
                     System.out.println("Nome alterado com sucesso!");
                 } else{
-                    System.out.println("Falha ao alterar nome!");
+                    System.out.println("Não existe esse registro!");
                 }
                 break;
             case 2:
@@ -357,7 +385,7 @@ public class Vendedor {
                 if(con.Update("produto", "preco", "'"+novo_preco+"'", "WHERE id_produto = "+ id_produto)){
                     System.out.println("Preço alterado com sucesso!");
                 } else{
-                    System.out.println("Falha ao alterar preço!");
+                    System.out.println("Não existe esse registro!");
                 }
                 break;
             case 3:
@@ -370,7 +398,7 @@ public class Vendedor {
                 if(con.Update("produto", "quantidade_estoque", "'"+nova_quantidade+"'", "WHERE id_produto = "+ id_produto)){
                     System.out.println("Quantidade alterada com sucesso!");
                 } else{
-                    System.out.println("Falha ao alterar quantidade!");
+                    System.out.println("Não existe esse registro!");
                 }
                 break;
             case 4:
@@ -379,6 +407,10 @@ public class Vendedor {
                 System.out.println("Opção inválida!");
                 break;
         }}
+    if (con.Quantity("", "produto", "")==0){
+        System.out.println("Não há produtos no estoque!");
+        
+    }
     }catch(Exception e){
         System.out.println("Falha ao alterar produto!");
         e.printStackTrace();
@@ -564,8 +596,9 @@ public class Vendedor {
         }
         while (!produtos.isEmpty()){
             if (!con.Update("produto", "quantidade_estoque", "quantidade_estoque + " +
-                    quantidade.pop().toString(), "WHERE id_produto =" + produtos.pop()))
-                return;
+                    quantidade.pop().toString(), "WHERE id_produto =" + produtos.pop())){
+                System.out.println("Não existe esse produto!");
+                return;}
 
             System.out.println("ATUALIZAÇÃO FEITA COM SUCESSO!");
         }
