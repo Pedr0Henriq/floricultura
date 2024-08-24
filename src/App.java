@@ -22,7 +22,8 @@ public class App {
                     "3 - Remover\n" +
                     "4 - Consultar\n" +
                     "5 - Adicionar no estoque\n" +
-                    "6 - Sair\n" +
+                    "6 - Gerar Relatório\n"+
+                    "7 - Sair\n" +
                     "-----------------------------------------------------------------------------");
             int a = Integer.parseInt(tc.nextLine());
 
@@ -150,6 +151,35 @@ public class App {
                     vendedor.adicionaproduto_noEstoque(tc);
                 }
                 case 6 -> {
+                    System.out.println("\nVocê deseja gerar relatório sobre o que?\n\n" +
+                            "1 - Clientes\n" +
+                            "2 - Vendedores\n" +
+                            "3 - Produtos\n" +
+                            "4 - Compras\n" +
+                            "5 - Voltar ao menu principal\n" +
+                            "-----------------------------------------------------------------------------");
+                    int r = Integer.parseInt(tc.nextLine());
+                    switch (r) {
+                        case 1:
+                            new Controller().geraRelatorioCliente("id_cliente, nome, cpf, email, rua, numero");
+                            break;
+                        
+                        case 2:
+                            new Controller().geraRelatorioVendedor("id_vendedor, nome, cpf");
+                            break;
+                        
+                        case 3:
+                            new Controller().geraRelatorioProduto("id_produto, nome, preco, quantidade_estoque");
+                            break;
+                        
+                        case 4:
+                            new Controller().geraRelatorioCompra("id_compra, id_cliente, id_vendedor, id_carrinho, valor, data, forma_pagamento");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                case 7 -> {
                     System.out.println("DESLIGANDO...");
                     System.exit(0);
                 }
