@@ -1,10 +1,13 @@
 package DAO;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.StringJoiner;
 
@@ -185,4 +188,136 @@ public class Controller {
             System.out.println("Falha ao mostrar resultados... " + e);
         }
     }
+
+    public void geraRelatorioCliente(String colunas){
+        String query = "SELECT " + colunas + " FROM cliente;";
+        int total=0;
+        try {
+            if(Quantity("", "cliente", "")==0){
+                System.out.println("Nenhum registro encontrado...");
+                return;
+            }
+            else{
+            ResultSet rt = conexao.createStatement().executeQuery(query);
+            FileWriter fw = new FileWriter("relatorioclientes.txt");
+
+            fw.write("Relatório de clientes:\n\n");
+            while (rt.next()) {
+            int id = rt.getInt("id_cliente");
+            String nome = rt.getString("nome");
+            String cpf = rt.getString("cpf");
+            String email = rt.getString("email");
+            String rua = rt.getString("rua");
+            int numero = rt.getInt("numero");
+            
+            fw.write("ID: " + id + "\nNome: " + nome + "\nCPF: " + cpf + "\nEmail: " + email + "\nRua: " + rua + "\nNúmero: " + numero + "\n\n");
+            total++;
+            }
+            fw.write("_________________________________\n");
+            fw.write("Total de registros: " + total+"\n");
+            fw.close();
+        }} catch (SQLException e) {
+            System.out.println("Falha ao acessar banco de dados... " + e);
+        }catch(IOException e){
+            System.out.println("Falha ao escrever no arquivo... " + e);
+        }
+    }
+
+    public void geraRelatorioVendedor(String colunas) {
+        String query = "SELECT " + colunas + " FROM vendedor;";
+        int total=0;
+        try {
+            if(Quantity("", "vendedor", "")==0){
+                System.out.println("Nenhum registro encontrado...");
+                return;
+            }
+            else{
+            ResultSet rt = conexao.createStatement().executeQuery(query);
+            FileWriter fw = new FileWriter("relatoriovendedores.txt");
+
+            fw.write("Relatório de vendedores:\n\n");
+            while (rt.next()) {
+            int id = rt.getInt("id_vendedor");
+            String nome = rt.getString("nome");
+            String cpf = rt.getString("cpf");
+                       
+            fw.write("ID: " + id + "\nNome: " + nome + "\nCPF: " + cpf + "\n\n");
+            total++;
+            }
+            fw.write("_________________________________\n");
+            fw.write("Total de registros: " + total+"\n");
+            fw.close();
+        }} catch (SQLException e) {
+            System.out.println("Falha ao acessar banco de dados... " + e);
+        }catch(IOException e){
+            System.out.println("Falha ao escrever no arquivo... " + e);
+        }
+    }
+
+    public void geraRelatorioProduto(String colunas) {
+        String query = "SELECT " + colunas + " FROM produto;";
+        int total=0;
+        try {
+            if(Quantity("", "produto", "")==0){
+                System.out.println("Nenhum registro encontrado...");
+                return;
+            }
+            else{
+            ResultSet rt = conexao.createStatement().executeQuery(query);
+            FileWriter fw = new FileWriter("relatorioprodutos.txt");
+
+            fw.write("Relatório de produtos:\n\n");
+            while (rt.next()) {
+            int id = rt.getInt("id_produto");
+            String nome = rt.getString("nome");
+            int quantidade = rt.getInt("quantidade_estoque");
+            double preco = rt.getDouble("preco");
+                       
+            fw.write("ID: " + id + "\nNome: " + nome + "\nPreço: " + preco + "\nQuantidade: "+quantidade+" \n\n");
+            total++;
+            }
+            fw.write("_________________________________\n");
+            fw.write("Total de registros: " + total+"\n");
+            fw.close();
+        }} catch (SQLException e) {
+            System.out.println("Falha ao acessar banco de dados... " + e);
+        }catch(IOException e){
+            System.out.println("Falha ao escrever no arquivo... " + e);
+        }
+    }
+
+    public void geraRelatorioCompra(String colunas) {
+        String query = "SELECT " + colunas + " FROM compra;";
+        int total=0;
+        try {
+            if(Quantity("", "compra", "")==0){
+                System.out.println("Nenhum registro encontrado...");
+                return;
+            }
+            else{
+            ResultSet rt = conexao.createStatement().executeQuery(query);
+            FileWriter fw = new FileWriter("relatoriocompras.txt");
+
+            fw.write("Relatório de compras:\n\n");
+            while (rt.next()) {
+            int id_Compra = rt.getInt("id_compra");
+            int id_Cliente = rt.getInt("id_cliente");
+            int id_Vendedor = rt.getInt("id_vendedor");
+            int id_Carrinho = rt.getInt("id_carrinho");
+            String forma = rt.getString("forma_pagamento");
+            double valor = rt.getDouble("valor");
+            String data = rt.getString("data");
+            
+            fw.write("ID: " + id_Compra + "\nID Cliente: " + id_Cliente + "\nID Vendedor: " + id_Vendedor + "\nID Carrinho: " + id_Carrinho + "\nForma de pagamento: " + forma + "\nValor: " + valor + "\nData: " + data + "\n\n");
+            
+            total++;
+            }
+            fw.write("_________________________________\n");
+            fw.write("Total de registros: " + total+"\n");
+            fw.close();
+        }} catch (SQLException e) {
+            System.out.println("Falha ao acessar banco de dados... " + e);
+        }catch(IOException e){
+            System.out.println("Falha ao escrever no arquivo... " + e);
+        }}
 }
